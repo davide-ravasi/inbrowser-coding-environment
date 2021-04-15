@@ -12,6 +12,7 @@ const App = () => {
     if (!ref.current) return;
 
     // transform is for transpile content only :)
+    //
     /* const results = await ref.current.transform(input, {
       loader: "jsx",
       target: "es2015",
