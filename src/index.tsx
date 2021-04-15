@@ -1,6 +1,7 @@
 import * as esbuild from "esbuild-wasm";
 import ReactDOM from "react-dom";
 import { useState, useEffect, useRef } from "react";
+import { UnpkgPathPlugin } from "./plugins/unpkg-path-plugin";
 
 const App = () => {
   const [input, setInput] = useState("");
@@ -10,12 +11,20 @@ const App = () => {
   const onClick = async () => {
     if (!ref.current) return;
 
-    const results = await ref.current.transform(input, {
+    // transform is for transpile content only :)
+    /* const results = await ref.current.transform(input, {
       loader: "jsx",
       target: "es2015",
+    }); */
+
+    const result = ref.current.build({
+      entryPoints: ["index.tsx"],
+      bundle: true,
+      write: false,
+      plugins: [UnpkgPathPlugin()],
     });
 
-    setCode(results.code);
+    setCode(result.code);
   };
 
   const startService = async () => {
