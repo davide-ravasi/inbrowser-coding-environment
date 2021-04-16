@@ -18,7 +18,7 @@ export const UnpkgPathPlugin = () => {
         }
 
         return {
-          path: "https://unpkg.com/tiny-test-pkg@1.0.0/index.js",
+          path: `https://unpkg.com/${args.path}@1.0.0/index.js`,
           namespace: "a",
         };
       });
@@ -32,7 +32,7 @@ export const UnpkgPathPlugin = () => {
           return {
             loader: "jsx",
             contents: `
-              import message from 'tiny-test-pkg';
+              import message from 'medium-test-pkg';
               console.log(message);
             `,
           };
