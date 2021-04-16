@@ -1,4 +1,5 @@
 import * as esbuild from "esbuild-wasm";
+import axios from "axios";
 
 export const UnpkgPathPlugin = () => {
   return {
@@ -7,11 +8,19 @@ export const UnpkgPathPlugin = () => {
       // the build as argument is the bundling process
 
       // the first file that is parsed is the entry point we give to the build function (in this case index.tsx)
-      // then for every import in the file that he find it runs the same processes
+      // then for every import in the file that he find he runs the same processes
       // onResolve: figuring out where the file is stored
       build.onResolve({ filter: /.*/ }, async (args: any) => {
         console.log("onResolve", args);
-        return { path: args.path, namespace: "a" };
+
+        if (args.path === "index.tsx") {
+          return { path: args.path, namespace: "a" };
+        }
+
+        return {
+          path: "https://unpkg.com/tiny-test-pkg@1.0.0/index.js",
+          namespace: "a",
+        };
       });
 
       // when the path of the file is resolved by onResolve
@@ -23,16 +32,18 @@ export const UnpkgPathPlugin = () => {
           return {
             loader: "jsx",
             contents: `
-              import message from './message';
+              import message from 'tiny-test-pkg';
               console.log(message);
             `,
           };
-        } else {
-          return {
-            loader: "jsx",
-            contents: 'export default "hi there!"',
-          };
         }
+
+        const { data } = await axios.get(args.path);
+
+        return {
+          loader: "jsx",
+          contents: data,
+        };
       });
     },
   };

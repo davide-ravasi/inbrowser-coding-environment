@@ -18,14 +18,14 @@ const App = () => {
       target: "es2015",
     }); */
 
-    const result = ref.current.build({
+    const result = await ref.current.build({
       entryPoints: ["index.tsx"],
       bundle: true,
       write: false,
       plugins: [UnpkgPathPlugin()],
     });
 
-    setCode(result.code);
+    setCode(result.outputFiles[0].text);
   };
 
   const startService = async () => {
