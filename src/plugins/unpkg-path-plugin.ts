@@ -20,7 +20,10 @@ export const UnpkgPathPlugin = () => {
         if (args.path.includes("./") || args.path.includes("../")) {
           return {
             namespace: "a",
-            path: new URL(args.path, args.importer + "/").href,
+            path: new URL(
+              args.path,
+              "https://unpkg.com/" + args.resolveDir + "/"
+            ).href,
           };
         }
 
@@ -39,17 +42,24 @@ export const UnpkgPathPlugin = () => {
           return {
             loader: "jsx",
             contents: `
-              import message from 'medium-test-pkg';
+              import message from 'nested-test-pkg';
               console.log(message);
             `,
           };
         }
 
-        const { data } = await axios.get(args.path);
+        // when axios call we have datas about the request too
+        const { data, request } = await axios.get(args.path);
 
+        // resolveDir is a parameter we can add that tells
+        // where the files are actually stored
+        // it's used to resolve an import path with a real path
+        // in our case we take the response url from the previous request
+        // because like that we can see in there was a redirection by unpkg
         return {
           loader: "jsx",
           contents: data,
+          resolveDir: new URL("./", request.responseURL).pathname,
         };
       });
     },
