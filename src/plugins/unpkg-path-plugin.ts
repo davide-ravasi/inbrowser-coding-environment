@@ -17,12 +17,13 @@ export const UnpkgPathPlugin = () => {
           return { path: args.path, namespace: "a" };
         }
 
+        console.log("resolveDir: ", args.resolveDir);
         if (args.path.includes("./") || args.path.includes("../")) {
           return {
             namespace: "a",
             path: new URL(
               args.path,
-              "https://unpkg.com/" + args.resolveDir + "/"
+              "https://unpkg.com" + args.resolveDir + "/"
             ).href,
           };
         }
@@ -42,7 +43,7 @@ export const UnpkgPathPlugin = () => {
           return {
             loader: "jsx",
             contents: `
-              import message from 'nested-test-pkg';
+              import message from 'react';
               console.log(message);
             `,
           };
