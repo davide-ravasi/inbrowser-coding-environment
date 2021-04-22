@@ -1,5 +1,10 @@
 import * as esbuild from "esbuild-wasm";
 import axios from "axios";
+import localForage from "localforage";
+
+const fileCache = localForage.createInstance({
+  name: "fileCache",
+});
 
 export const UnpkgPathPlugin = () => {
   return {
@@ -17,7 +22,6 @@ export const UnpkgPathPlugin = () => {
           return { path: args.path, namespace: "a" };
         }
 
-        console.log("resolveDir: ", args.resolveDir);
         if (args.path.includes("./") || args.path.includes("../")) {
           return {
             namespace: "a",
@@ -44,10 +48,17 @@ export const UnpkgPathPlugin = () => {
             loader: "jsx",
             contents: `
               import message from 'react';
+              import reactDOM from 'react-dom';
               console.log(message);
             `,
           };
         }
+
+        const dataStored = await fileCache.getItem<esbuild.OnLoadResult>(
+          args.path
+        );
+
+        if (dataStored) return dataStored;
 
         // when axios call we have datas about the request too
         const { data, request } = await axios.get(args.path);
@@ -57,11 +68,15 @@ export const UnpkgPathPlugin = () => {
         // it's used to resolve an import path with a real path
         // in our case we take the response url from the previous request
         // because like that we can see in there was a redirection by unpkg
-        return {
+        const returnedData: esbuild.OnLoadResult = {
           loader: "jsx",
           contents: data,
           resolveDir: new URL("./", request.responseURL).pathname,
         };
+
+        await fileCache.setItem(args.path, returnedData);
+
+        return returnedData;
       });
     },
   };
