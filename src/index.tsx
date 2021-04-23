@@ -19,7 +19,7 @@ const App = () => {
     }); */
 
     const result = await ref.current.build({
-      entryPoints: ["index.tsx"],
+      entryPoints: ["index.js"],
       bundle: true,
       write: false,
       plugins: [UnpkgPathPlugin(input)],

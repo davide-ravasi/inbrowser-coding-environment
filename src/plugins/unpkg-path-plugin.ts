@@ -15,23 +15,19 @@ export const UnpkgPathPlugin = (input: string) => {
       // the first file that is parsed is the entry point we give to the build function (in this case index.tsx)
       // then for every import in the file that he find he runs the same processes
       // onResolve: figuring out where the file is stored
+      build.onResolve({ filter: /^index\.js$/ }, (args: any) => {
+        return { path: "index.js", namespace: "a" };
+      });
+
+      build.onResolve({ filter: /^\.+\// }, (args: any) => {
+        return {
+          namespace: "a",
+          path: new URL(args.path, "https://unpkg.com" + args.resolveDir + "/")
+            .href,
+        };
+      });
+
       build.onResolve({ filter: /.*/ }, async (args: any) => {
-        console.log("onResolve", args);
-
-        if (args.path === "index.tsx") {
-          return { path: args.path, namespace: "a" };
-        }
-
-        if (args.path.includes("./") || args.path.includes("../")) {
-          return {
-            namespace: "a",
-            path: new URL(
-              args.path,
-              "https://unpkg.com" + args.resolveDir + "/"
-            ).href,
-          };
-        }
-
         return {
           path: `https://unpkg.com/${args.path}`,
           namespace: "a",
@@ -43,7 +39,7 @@ export const UnpkgPathPlugin = (input: string) => {
       build.onLoad({ filter: /.*/ }, async (args: any) => {
         console.log("onLoad", args);
 
-        if (args.path === "index.tsx") {
+        if (args.path === "index.js") {
           return {
             loader: "jsx",
             contents: input,
@@ -63,7 +59,7 @@ export const UnpkgPathPlugin = (input: string) => {
         // where the files are actually stored
         // it's used to resolve an import path with a real path
         // in our case we take the response url from the previous request
-        // because like that we can see in there was a redirection by unpkg
+        // because like that we can see if there is a redirection by unpkg
         const returnedData: esbuild.OnLoadResult = {
           loader: "jsx",
           contents: data,
