@@ -20,13 +20,18 @@ export const fetchPlugin = (input: string) => {
         };
       });
 
-      build.onLoad({ filter: /\.css$/ }, async (args: any) => {
+      // we can add this function here because if the cache doesn't returns nothing
+      // esbuild executed the others functions, so this is not blocking
+      // esbuild continue to search an onLoad function that can manage the url returned
+      build.onLoad({ filter: /.*/ }, async (args: any) => {
         const dataStored = await fileCache.getItem<esbuild.OnLoadResult>(
           args.path
         );
 
         if (dataStored) return dataStored;
+      });
 
+      build.onLoad({ filter: /\.css$/ }, async (args: any) => {
         // when axios call we have datas about the request too
         const { data, request } = await axios.get(args.path);
 
@@ -59,14 +64,6 @@ export const fetchPlugin = (input: string) => {
       });
 
       build.onLoad({ filter: /.*/ }, async (args: any) => {
-        console.log("onLoad", args);
-
-        const dataStored = await fileCache.getItem<esbuild.OnLoadResult>(
-          args.path
-        );
-
-        if (dataStored) return dataStored;
-
         // when axios call we have datas about the request too
         const { data, request } = await axios.get(args.path);
 
