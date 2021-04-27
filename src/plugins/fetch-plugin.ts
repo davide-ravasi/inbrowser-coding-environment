@@ -13,27 +13,22 @@ export const fetchPlugin = (input: string) => {
     setup(build: esbuild.PluginBuild) {
       // when the path of the file is resolved by onResolve
       // then is taken by onLoad that try to load the content of the file
-      build.onLoad({ filter: /.*/ }, async (args: any) => {
-        console.log("onLoad", args);
+      build.onLoad({ filter: /^index\.js$/ }, async (args: any) => {
+        return {
+          loader: "jsx",
+          contents: input,
+        };
+      });
 
-        if (args.path === "index.js") {
-          return {
-            loader: "jsx",
-            contents: input,
-          };
-        }
+      build.onLoad({ filter: /\.css$/ }, async (args: any) => {
+        const dataStored = await fileCache.getItem<esbuild.OnLoadResult>(
+          args.path
+        );
 
-        // const dataStored = await fileCache.getItem<esbuild.OnLoadResult>(
-        //   args.path
-        // );
-
-        // if (dataStored) return dataStored;
+        if (dataStored) return dataStored;
 
         // when axios call we have datas about the request too
         const { data, request } = await axios.get(args.path);
-
-        // check if the file is a css file (.css extension)
-        const isCss = args.path.match(/\.css$/) ? true : false;
 
         const escapedString = data
           .replace(/\n/g, "")
@@ -41,13 +36,11 @@ export const fetchPlugin = (input: string) => {
           .replace(/'/g, "/\\'/");
 
         // if is a css file we add a script to the bundle to append the css contents
-        const contents = isCss
-          ? `
+        const contents = `
           var styleNode = document.createElement('style');
           styleNode.innerHtml = '${escapedString}';
           document.getElementsByTagName('head')[0].appendChild(styleNode);
-        `
-          : data;
+        `;
 
         // resolveDir is a parameter we can add that tells
         // where the files are actually stored
@@ -64,6 +57,40 @@ export const fetchPlugin = (input: string) => {
 
         return returnedData;
       });
+
+      build.onLoad({ filter: /.*/ }, async (args: any) => {
+        console.log("onLoad", args);
+
+        const dataStored = await fileCache.getItem<esbuild.OnLoadResult>(
+          args.path
+        );
+
+        if (dataStored) return dataStored;
+
+        // when axios call we have datas about the request too
+        const { data, request } = await axios.get(args.path);
+
+        // resolveDir is a parameter we can add that tells
+        // where the files are actually stored
+        // it's used to resolve an import path with a real path
+        // in our case we take the response url from the previous request
+        // because like that we can see if there is a redirection by unpkg
+        const returnedData: esbuild.OnLoadResult = {
+          loader: "jsx",
+          contents: data,
+          resolveDir: new URL("./", request.responseURL).pathname,
+        };
+
+        await fileCache.setItem(args.path, returnedData);
+
+        return returnedData;
+      });
     },
   };
 };
+
+/*
+import 'tiny-test-pkg';
+import 'bulma/css/bulma.css';
+
+*/
