@@ -8,6 +8,7 @@ const App = () => {
   const [input, setInput] = useState("");
   const [code, setCode] = useState("");
   const ref = useRef<any>();
+  const iframe = useRef<any>();
 
   const onClick = async () => {
     if (!ref.current) return;
@@ -30,15 +31,36 @@ const App = () => {
       },
     });
 
+    iframe.current.contentWindow.postMessage(result.outputFiles[0].text, "*");
+
     setCode(result.outputFiles[0].text);
   };
 
   const startService = async () => {
     ref.current = await esbuild.startService({
       worker: true,
-      wasmURL: "https://www.unpkg.com/esbuild-wasm@0.8.27/esbuild-wasm",
+      wasmURL: "https://www.unpkg.com/esbuild-wasm@0.8.27/esbuild.wasm",
     });
   };
+
+  const html = `
+    <html>
+      <head></head>
+      <body>
+          <div id="root"></div>
+          <script>
+            function displayMessage(evt) {
+              eval(evt.data)
+            }
+          
+            if (window.addEventListener) {
+              // For standards-compliant web browsers
+              window.addEventListener("message", displayMessage, false);
+            }
+        </script>
+      </body>
+    </html>
+  `;
 
   useEffect(() => {
     startService();
@@ -53,6 +75,8 @@ const App = () => {
       <button onClick={onClick}>Submit</button>
 
       <pre>{code}</pre>
+
+      <iframe allow="" ref={iframe} title="da iframe" srcDoc={html} />
     </div>
   );
 };
